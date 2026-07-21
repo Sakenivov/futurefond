@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FutureFound — Найди свою профессию будущего</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+:root{
+  --bg-void:#05060c;
+  --bg-deep:#0a0e27;
+  --violet:#7c5cff;
+  --violet-soft:#a78bfa;
+  --cyan:#22e8d8;
+  --magenta:#ff5cb8;
+  --ink:#e8e9f5;
+  --ink-dim:#8b8fb8;
+  --glass:rgba(255,255,255,0.045);
+  --glass-border:rgba(255,255,255,0.09);
+}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg-void);
+  color:var(--ink);
+  font-family:'Inter',sans-serif;
+  overflow-x:hidden;
+  position:relative;
+}
+h1,h2,h3,h4,.display{font-family:'Space Grotesk',sans-serif;}
+.light body{background:#f4f5fb;color:#141527}
+
+#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;}
+.grid-overlay{
+  position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:
+    linear-gradient(rgba(124,92,255,0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(124,92,255,0.06) 1px, transparent 1px);
+  background-size:64px 64px;
+  mask-image:radial-gradient(ellipse 80% 60% at 50% 0%, black 40%, transparent 100%);
+}
+.content{position:relative;z-index:1;}
+
+.glass{
+  background:var(--glass);
+  border:1px solid var(--glass-border);
+  backdrop-filter:blur(18px) saturate(140%);
+  -webkit-backdrop-filter:blur(18px) saturate(140%);
+}
+.glass-strong{
+  background:rgba(20,22,42,0.55);
+  border:1px solid rgba(255,255,255,0.1);
+  backdrop-filter:blur(24px) saturate(160%);
+  -webkit-backdrop-filter:blur(24px) saturate(160%);
+}
+
+.text-gradient{
+  background:linear-gradient(100deg,var(--cyan) 0%, var(--violet-soft) 50%, var(--magenta) 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+
+.btn-neon{
+  position:relative;
+  background:linear-gradient(120deg,var(--violet),var(--cyan));
+  color:#04050a;
+  font-weight:600;
+  padding:0.9rem 2rem;
+  border-radius:999px;
+  box-shadow:0 0 24px rgba(124,92,255,0.5), 0 0 48px rgba(34,232,216,0.25);
+  transition:transform .35s cubic-bezier(.2,.9,.3,1.2), box-shadow .35s ease;
+}
+.btn-neon:hover{transform:translateY(-3px) scale(1.02); box-shadow:0 0 34px rgba(124,92,255,0.75), 0 0 70px rgba(34,232,216,0.4);}
+
+.btn-ghost{
+  padding:0.9rem 2rem;border-radius:999px;
+  border:1px solid var(--glass-border);
+  color:var(--ink);
+  transition:all .3s ease;
+}
+.btn-ghost:hover{border-color:var(--cyan); box-shadow:0 0 20px rgba(34,232,216,0.2); background:rgba(34,232,216,0.06);}
+
+.card{
+  position:relative;
+  border-radius:1.25rem;
+  transition:transform .45s cubic-bezier(.2,.8,.2,1), border-color .3s ease, box-shadow .4s ease;
+  transform-style:preserve-3d;
+}
+.card:hover{
+  border-color:rgba(124,92,255,0.5);
+  box-shadow:0 20px 60px -20px rgba(124,92,255,0.35), 0 0 30px -5px rgba(34,232,216,0.15);
+}
+.card-glow{
+  position:absolute;inset:-1px;border-radius:1.25rem;padding:1px;
+  background:linear-gradient(135deg, rgba(34,232,216,0.4), rgba(124,92,255,0.4), rgba(255,92,184,0.3));
+  -webkit-mask:linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite:xor; mask-composite:exclude;
+  opacity:0; transition:opacity .3s ease; pointer-events:none;
+}
+.card:hover .card-glow{opacity:1;}
+
+.reveal{opacity:0; transform:translateY(40px);}
+
+.fade-in{animation:fadeIn 1s ease forwards;}
+@keyframes fadeIn{to{opacity:1;transform:none;}}
+
+.badge{
+  font-size:0.7rem;letter-spacing:0.08em;text-transform:uppercase;
+  padding:0.25rem 0.7rem;border-radius:999px;
+  border:1px solid var(--glass-border);
+  color:var(--ink-dim);
+}
+
+.nav-link{position:relative;color:var(--ink-dim);transition:color .25s ease;}
+.nav-link:hover{color:var(--ink);}
+.nav-link::after{
+  content:'';position:absolute;left:0;bottom:-4px;width:0;height:1px;
+  background:linear-gradient(90deg,var(--cyan),var(--violet));
+  transition:width .3s ease;
+}
+.nav-link:hover::after{width:100%;}
+
+::-webkit-scrollbar{width:10px;}
+::-webkit-scrollbar-track{background:var(--bg-void);}
+::-webkit-scrollbar-thumb{background:linear-gradient(var(--violet),var(--cyan)); border-radius:10px;}
+
+.roadmap-line{
+  background:linear-gradient(180deg,var(--cyan),var(--violet),var(--magenta));
+}
+
+.faq-item[open] summary .chev{transform:rotate(180deg);}
+summary{cursor:pointer;list-style:none;}
+summary::-webkit-details-marker{display:none;}
+
+input,textarea{
+  background:rgba(255,255,255,0.03);
+  border:1px solid var(--glass-border);
+  color:var(--ink);
+}
+input::placeholder,textarea::placeholder{color:var(--ink-dim);}
+input:focus,textarea:focus{outline:none;border-color:var(--cyan); box-shadow:0 0 0 3px rgba(34,232,216,0.12);}
+
+.tilt-wrap{perspective:1200px;}
+
+@media (prefers-reduced-motion: reduce){
+  *{animation:none !important; transition:none !important;}
+}
+</style>
+</head>
+<body class="dark">
+
+<canvas id="bg-canvas"></canvas>
+<div class="grid-overlay"></div>
+
+<div class="content">
+
+<!-- NAV -->
+<nav class="fixed top-0 inset-x-0 z-50 glass border-b border-white/5">
+  <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+    <div class="flex items-center gap-2">
+      <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-300 to-violet-500" style="box-shadow:0 0 18px rgba(124,92,255,.6)"></div>
+      <span class="display font-semibold text-lg tracking-tight">Future<span class="text-gradient">Found</span></span>
+    </div>
+    <div class="hidden md:flex items-center gap-8 text-sm">
+      <a href="#ideas" class="nav-link">Идеи</a>
+      <a href="#professions" class="nav-link">Профессии</a>
+      <a href="#roadmap" class="nav-link">Roadmap</a>
+      <a href="#courses" class="nav-link">Курсы</a>
+      <a href="#articles" class="nav-link">Статьи</a>
+      <a href="#faq" class="nav-link">FAQ</a>
+    </div>
+    <div class="flex items-center gap-3">
+      <button id="theme-toggle" class="btn-ghost !px-3 !py-2 text-xs">🌓</button>
+      <a href="#cabinet" class="btn-ghost !py-2 text-sm hidden sm:block">Кабинет</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<header class="relative min-h-screen flex items-center pt-24 pb-16 px-6">
+  <div class="max-w-7xl mx-auto grid lg:grid-cols-2 gap-14 items-center w-full">
+    <div class="reveal" id="hero-text">
+      <span class="badge">500+ идей · 12 профессий · Дорожные карты</span>
+      <h1 class="display font-bold text-5xl md:text-6xl leading-[1.05] mt-6">
+        Открой свою <span class="text-gradient">будущую профессию</span> и прибыльный бизнес
+      </h1>
+      <p class="text-lg mt-6" style="color:var(--ink-dim)">
+        Более 500+ бизнес-идей, IT-профессии, дорожные карты обучения и инструменты для старта — всё в одном месте.
+      </p>
+      <div class="flex flex-wrap gap-4 mt-9">
+        <a href="#ideas" class="btn-neon">Найти идею</a>
+        <a href="#professions" class="btn-ghost">Изучить IT</a>
+      </div>
+      <div class="grid grid-cols-3 gap-6 mt-14 max-w-md">
+        <div><div class="display text-3xl font-bold text-gradient counter" data-target="500">0</div><div class="text-xs mt-1" style="color:var(--ink-dim)">бизнес-идей</div></div>
+        <div><div class="display text-3xl font-bold text-gradient counter" data-target="12">0</div><div class="text-xs mt-1" style="color:var(--ink-dim)">IT-профессий</div></div>
+        <div><div class="display text-3xl font-bold text-gradient counter" data-target="24">0</div><div class="text-xs mt-1" style="color:var(--ink-dim)">курса-партнёра</div></div>
+      </div>
+    </div>
+
+    <div class="relative reveal" id="hero-art">
+      <svg viewBox="0 0 520 480" class="w-full max-w-lg mx-auto">
+        <defs>
+          <linearGradient id="g1" x1="0" x2="1" y1="0" y2="1">
+            <stop offset="0%" stop-color="#22e8d8"/>
+            <stop offset="100%" stop-color="#7c5cff"/>
+          </linearGradient>
+          <linearGradient id="g2" x1="0" x2="1" y1="0" y2="1">
+            <stop offset="0%" stop-color="#ff5cb8"/>
+            <stop offset="100%" stop-color="#7c5cff"/>
+          </linearGradient>
+          <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#7c5cff" stop-opacity="0.55"/>
+            <stop offset="100%" stop-color="#7c5cff" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+        <circle cx="260" cy="230" r="220" fill="url(#glow)"/>
+        <!-- floating holo rings -->
+        <g id="orbit-1">
+          <ellipse cx="260" cy="150" rx="150" ry="34" fill="none" stroke="url(#g1)" stroke-width="1.5" opacity="0.6"/>
+        </g>
+        <g id="orbit-2">
+          <ellipse cx="260" cy="110" rx="100" ry="22" fill="none" stroke="url(#g2)" stroke-width="1.5" opacity="0.5"/>
+        </g>
+        <!-- desk -->
+        <rect x="120" y="360" width="280" height="14" rx="7" fill="#171a35"/>
+        <rect x="150" y="374" width="14" height="60" fill="#12142b"/>
+        <rect x="356" y="374" width="14" height="60" fill="#12142b"/>
+        <!-- laptop -->
+        <rect x="185" y="300" width="150" height="95" rx="10" fill="#11132b" stroke="#2b2f5c"/>
+        <rect x="197" y="312" width="126" height="70" rx="4" fill="#05060c"/>
+        <rect x="197" y="312" width="126" height="70" rx="4" fill="url(#g1)" opacity="0.18"/>
+        <rect x="150" y="392" width="220" height="12" rx="6" fill="#1a1d3d"/>
+        <!-- person silhouette -->
+        <circle cx="260" cy="230" r="26" fill="#151834" stroke="url(#g1)" stroke-width="2"/>
+        <path d="M215 300 Q260 255 305 300 L305 320 L215 320 Z" fill="#151834" stroke="url(#g2)" stroke-width="2"/>
+        <!-- floating holographic panels -->
+        <g opacity="0.9">
+          <rect x="40" y="140" width="90" height="60" rx="10" class="glass-strong" fill="rgba(34,232,216,0.08)" stroke="url(#g1)" stroke-width="1.2"/>
+          <line x1="55" y1="160" x2="115" y2="160" stroke="#22e8d8" stroke-width="2" opacity="0.7"/>
+          <line x1="55" y1="172" x2="100" y2="172" stroke="#22e8d8" stroke-width="2" opacity="0.5"/>
+          <line x1="55" y1="184" x2="110" y2="184" stroke="#22e8d8" stroke-width="2" opacity="0.4"/>
+        </g>
+        <g opacity="0.9">
+          <rect x="390" y="170" width="90" height="60" rx="10" fill="rgba(124,92,255,0.08)" stroke="url(#g2)" stroke-width="1.2"/>
+          <circle cx="435" cy="200" r="16" fill="none" stroke="#ff5cb8" stroke-width="2" opacity="0.7"/>
+          <circle cx="435" cy="200" r="8" fill="#ff5cb8" opacity="0.4"/>
+        </g>
+        <g opacity="0.85">
+          <rect x="365" y="60" width="80" height="50" rx="10" fill="rgba(34,232,216,0.06)" stroke="url(#g1)" stroke-width="1"/>
+          <polyline points="375,95 390,80 405,90 420,70 435,85" fill="none" stroke="#22e8d8" stroke-width="2"/>
+        </g>
+      </svg>
+    </div>
+  </div>
+  <div class="absolute bottom-8 left-1/2 -translate-x-1/2 text-xs animate-bounce" style="color:var(--ink-dim)">↓ Прокрути вниз</div>
+</header>
+
+<!-- SEARCH & FILTERS -->
+<section class="max-w-5xl mx-auto px-6 -mt-6 mb-24 relative z-10">
+  <div class="glass-strong rounded-2xl p-5 md:p-6">
+    <div class="flex flex-col md:flex-row gap-3">
+      <input id="search-input" type="text" placeholder="Ищи бизнес-идею, профессию или статью…" class="flex-1 rounded-xl px-4 py-3 text-sm">
+      <button id="search-btn" class="btn-neon !py-3 !px-6 text-sm">Найти</button>
+    </div>
+    <div class="flex flex-wrap gap-2 mt-4 text-xs">
+      <button class="filter-chip badge hover:border-cyan-300/60" data-filter="all">Все</button>
+      <button class="filter-chip badge hover:border-cyan-300/60" data-filter="easy">Просто для старта</button>
+      <button class="filter-chip badge hover:border-cyan-300/60" data-filter="lowbudget">Малый бюджет</button>
+      <button class="filter-chip badge hover:border-cyan-300/60" data-filter="fast">Быстрое обучение</button>
+      <button class="filter-chip badge hover:border-cyan-300/60" data-filter="highincome">Высокий доход</button>
+    </div>
+    <p id="search-result" class="text-xs mt-3" style="color:var(--ink-dim)"></p>
+  </div>
+</section>
+
+<!-- BUSINESS IDEAS -->
+<section id="ideas" class="max-w-7xl mx-auto px-6 mb-28">
+  <div class="flex items-end justify-between mb-10 reveal">
+    <div>
+      <span class="badge">Раздел 01</span>
+      <h2 class="display text-3xl md:text-4xl font-bold mt-3">Бизнес-идеи</h2>
+      <p class="mt-2 max-w-xl" style="color:var(--ink-dim)">Выбери направление и начни зарабатывать уже в этом квартале.</p>
+    </div>
+  </div>
+  <div id="ideas-grid" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+</section>
+
+<!-- IT PROFESSIONS -->
+<section id="professions" class="max-w-7xl mx-auto px-6 mb-28">
+  <div class="mb-10 reveal">
+    <span class="badge">Раздел 02</span>
+    <h2 class="display text-3xl md:text-4xl font-bold mt-3">IT-профессии</h2>
+    <p class="mt-2 max-w-xl" style="color:var(--ink-dim)">Выбери профессию под свой уровень и получи готовый план обучения.</p>
+  </div>
+  <div id="professions-grid" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+</section>
+
+<!-- ROADMAP -->
+<section id="roadmap" class="max-w-4xl mx-auto px-6 mb-28">
+  <div class="mb-14 text-center reveal">
+    <span class="badge">Раздел 03</span>
+    <h2 class="display text-3xl md:text-4xl font-bold mt-3">Roadmap твоего старта</h2>
+    <p class="mt-2" style="color:var(--ink-dim)">Шесть шагов от нуля до первой работы или первого клиента.</p>
+  </div>
+  <div class="relative pl-10">
+    <div class="absolute left-3 top-0 bottom-0 w-[2px] roadmap-line rounded-full"></div>
+    <div id="roadmap-steps" class="space-y-10"></div>
+  </div>
+</section>
+
+<!-- COURSES -->
+<section id="courses" class="max-w-7xl mx-auto px-6 mb-28">
+  <div class="mb-10 reveal">
+    <span class="badge">Раздел 04</span>
+    <h2 class="display text-3xl md:text-4xl font-bold mt-3">Лучшие курсы</h2>
+  </div>
+  <div id="courses-grid" class="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4"></div>
+</section>
+
+<!-- ARTICLES -->
+<section id="articles" class="max-w-7xl mx-auto px-6 mb-28">
+  <div class="mb-10 reveal">
+    <span class="badge">Раздел 05</span>
+    <h2 class="display text-3xl md:text-4xl font-bold mt-3">Популярные статьи</h2>
+  </div>
+  <div id="articles-grid" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+</section>
+
+<!-- PERSONAL CABINET -->
+<section id="cabinet" class="max-w-6xl mx-auto px-6 mb-28">
+  <div class="glass-strong rounded-3xl p-8 md:p-12 reveal">
+    <span class="badge">Личный кабинет</span>
+    <h2 class="display text-3xl font-bold mt-3 mb-8">Твой прогресс</h2>
+    <div class="grid md:grid-cols-3 gap-8">
+      <div>
+        <h3 class="font-semibold mb-3 text-sm" style="color:var(--ink-dim)">СОХРАНЁННЫЕ ИДЕИ</h3>
+        <div id="saved-ideas" class="space-y-2 text-sm"><p style="color:var(--ink-dim)">Пока пусто — сохрани идею на карточке ⭐</p></div>
+      </div>
+      <div>
+        <h3 class="font-semibold mb-3 text-sm" style="color:var(--ink-dim)">СОХРАНЁННЫЕ ПРОФЕССИИ</h3>
+        <div id="saved-professions" class="space-y-2 text-sm"><p style="color:var(--ink-dim)">Пока пусто — сохрани профессию ⭐</p></div>
+      </div>
+      <div>
+        <h3 class="font-semibold mb-3 text-sm" style="color:var(--ink-dim)">ПРОГРЕСС ОБУЧЕНИЯ</h3>
+        <div class="w-full h-3 rounded-full bg-white/5 overflow-hidden">
+          <div id="progress-bar" class="h-full roadmap-line rounded-full transition-all duration-700" style="width:0%"></div>
+        </div>
+        <p id="progress-label" class="text-xs mt-2" style="color:var(--ink-dim)">0 из 6 этапов пройдено</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="max-w-7xl mx-auto px-6 mb-28">
+  <div class="mb-10 reveal">
+    <span class="badge">Отзывы</span>
+    <h2 class="display text-3xl md:text-4xl font-bold mt-3">Истории тех, кто уже начал</h2>
+  </div>
+  <div class="grid md:grid-cols-3 gap-6">
+    <div class="card glass rounded-2xl p-6"><div class="card-glow"></div>
+      <p class="text-sm" style="color:var(--ink-dim)">«Нашла нишу для Telegram-проекта за один вечер, roadmap помог не распыляться».</p>
+      <p class="mt-4 text-sm font-semibold">Алина, основатель проекта</p>
+    </div>
+    <div class="card glass rounded-2xl p-6"><div class="card-glow"></div>
+      <p class="text-sm" style="color:var(--ink-dim)">«Прошла путь от новичка до первой оффера Frontend-разработчика за 7 месяцев по этой карте».</p>
+      <p class="mt-4 text-sm font-semibold">Дамир, Frontend Developer</p>
+    </div>
+    <div class="card glass rounded-2xl p-6"><div class="card-glow"></div>
+      <p class="text-sm" style="color:var(--ink-dim)">«Сравнение курсов сэкономило мне пару месяцев поисков — сразу выбрал нужный трек».</p>
+      <p class="mt-4 text-sm font-semibold">Марат, Data Scientist</p>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section id="faq" class="max-w-3xl mx-auto px-6 mb-28">
+  <div class="mb-10 reveal">
+    <span class="badge">FAQ</span>
+    <h2 class="display text-3xl md:text-4xl font-bold mt-3">Частые вопросы</h2>
+  </div>
+  <div class="space-y-3" id="faq-list"></div>
+</section>
+
+<!-- CONTACT + NEWSLETTER -->
+<section class="max-w-6xl mx-auto px-6 mb-28 grid md:grid-cols-2 gap-8">
+  <div class="glass-strong rounded-2xl p-8 reveal">
+    <h3 class="display text-xl font-bold mb-1">Связаться с нами</h3>
+    <p class="text-sm mb-6" style="color:var(--ink-dim)">Есть вопрос или предложение? Напиши — ответим в течение дня.</p>
+    <form id="contact-form" class="space-y-4">
+      <input required type="text" placeholder="Имя" class="w-full rounded-xl px-4 py-3 text-sm">
+      <input required type="email" placeholder="Email" class="w-full rounded-xl px-4 py-3 text-sm">
+      <textarea required rows="4" placeholder="Сообщение" class="w-full rounded-xl px-4 py-3 text-sm"></textarea>
+      <button type="submit" class="btn-neon w-full text-sm">Отправить</button>
+      <p id="contact-status" class="text-xs" style="color:var(--cyan)"></p>
+    </form>
+  </div>
+  <div class="glass-strong rounded-2xl p-8 flex flex-col justify-center reveal">
+    <h3 class="display text-xl font-bold mb-1">Подписка на рассылку</h3>
+    <p class="text-sm mb-6" style="color:var(--ink-dim)">Новые идеи, роли и роадмапы — раз в неделю, без спама.</p>
+    <form id="newsletter-form" class="flex gap-3">
+      <input required type="email" placeholder="you@email.com" class="flex-1 rounded-xl px-4 py-3 text-sm">
+      <button type="submit" class="btn-ghost text-sm">Подписаться</button>
+    </form>
+    <p id="newsletter-status" class="text-xs mt-3" style="color:var(--cyan)"></p>
+  </div>
+</section>
+
+<footer class="border-t border-white/5 py-10 px-6">
+  <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-sm" style="color:var(--ink-dim)">
+    <span>© 2026 FutureFound. Все права защищены.</span>
+    <div class="flex gap-6">
+      <a href="#ideas" class="nav-link">Идеи</a>
+      <a href="#professions" class="nav-link">Профессии</a>
+      <a href="#faq" class="nav-link">FAQ</a>
+    </div>
+  </div>
+</footer>
+
+</div>
+
+<script>
+/* ---------- THEME TOGGLE ---------- */
+document.getElementById('theme-toggle').addEventListener('click', ()=>{
+  document.documentElement.classList.toggle('light');
+});
+
+/* ---------- PARTICLE + GRID CANVAS BACKGROUND ---------- */
+const canvas = document.getElementById('bg-canvas');
+const ctx = canvas.getContext('2d');
+let w,h,particles=[];
+function resize(){ w=canvas.width=window.innerWidth; h=canvas.height=window.innerHeight; }
+resize(); window.addEventListener('resize',resize);
+const colors=['#22e8d8','#7c5cff','#ff5cb8'];
+for(let i=0;i<70;i++){
+  particles.push({
+    x:Math.random()*w, y:Math.random()*h,
+    r:Math.random()*1.6+0.4,
+    vx:(Math.random()-0.5)*0.25, vy:(Math.random()-0.5)*0.25,
+    c:colors[Math.floor(Math.random()*colors.length)],
+    a:Math.random()*0.5+0.2
+  });
+}
+function animate(){
+  ctx.clearRect(0,0,w,h);
+  particles.forEach(p=>{
+    p.x+=p.vx; p.y+=p.vy;
+    if(p.x<0)p.x=w; if(p.x>w)p.x=0;
+    if(p.y<0)p.y=h; if(p.y>h)p.y=0;
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+    ctx.fillStyle=p.c; ctx.globalAlpha=p.a;
+    ctx.fill();
+  });
+  ctx.globalAlpha=1;
+  requestAnimationFrame(animate);
+}
+animate();
+
+/* ---------- SCROLL REVEAL ---------- */
+gsap.registerPlugin(ScrollTrigger);
+document.querySelectorAll('.reveal').forEach((el,i)=>{
+  gsap.to(el,{
+    opacity:1, y:0, duration:0.9, ease:'power3.out',
+    scrollTrigger:{ trigger:el, start:'top 85%' }
+  });
+});
+gsap.to('#hero-text',{opacity:1,y:0,duration:1,delay:0.1,ease:'power3.out'});
+gsap.to('#hero-art',{opacity:1,y:0,duration:1.1,delay:0.3,ease:'power3.out'});
+gsap.to('#orbit-1',{rotation:360,transformOrigin:'260px 150px',duration:22,repeat:-1,ease:'none'});
+gsap.to('#orbit-2',{rotation:-360,transformOrigin:'260px 110px',duration:16,repeat:-1,ease:'none'});
+
+/* ---------- COUNTERS ---------- */
+document.querySelectorAll('.counter').forEach(el=>{
+  const target=+el.dataset.target;
+  ScrollTrigger.create({
+    trigger:el, start:'top 90%', once:true,
+    onEnter:()=>{
+      gsap.to(el,{innerText:target,duration:1.6,ease:'power1.out',snap:{innerText:1},
+        onUpdate:function(){el.innerText=Math.round(this.targets()[0].innerText)+'+';}});
+    }
+  });
+});
+
+/* ---------- DATA ---------- */
+const ideas=[
+  {t:'AI-стартапы',icon:'🤖',desc:'Продукты на базе AI-моделей для бизнеса и потребителей.',diff:'Сложно',cap:'$3000–15000',profit:'Высокая',tags:['highincome']},
+  {t:'Онлайн-бизнес',icon:'💻',desc:'Цифровые товары, консультации и услуги без офиса.',diff:'Легко',cap:'$100–1000',profit:'Средняя',tags:['easy','lowbudget','fast']},
+  {t:'SaaS',icon:'☁️',desc:'Подписочный софт, решающий узкую проблему рынка.',diff:'Сложно',cap:'$2000–10000',profit:'Высокая',tags:['highincome']},
+  {t:'Интернет-магазины',icon:'🛒',desc:'Продажа товаров через собственный сайт или маркетплейс.',diff:'Средне',cap:'$500–5000',profit:'Средняя',tags:['lowbudget']},
+  {t:'Telegram-проекты',icon:'📣',desc:'Каналы, боты и мини-приложения с монетизацией через рекламу.',diff:'Легко',cap:'$0–300',profit:'Средняя',tags:['easy','lowbudget','fast']},
+  {t:'YouTube',icon:'🎬',desc:'Контент-канал с монетизацией через рекламу и спонсорство.',diff:'Средне',cap:'$0–500',profit:'Средняя',tags:['lowbudget']},
+  {t:'Автоматизация',icon:'⚙️',desc:'No-code решения и скрипты для бизнес-процессов клиентов.',diff:'Средне',cap:'$200–2000',profit:'Высокая',tags:['fast']},
+  {t:'Маркетплейсы',icon:'🏬',desc:'Продажи на Wildberries, Ozon и аналогичных площадках.',diff:'Средне',cap:'$500–3000',profit:'Средняя',tags:['lowbudget']},
+  {t:'Финтех',icon:'💳',desc:'Продукты для платежей, накоплений и финансовой аналитики.',diff:'Сложно',cap:'$5000–20000',profit:'Высокая',tags:['highincome']},
+  {t:'Образование',icon:'🎓',desc:'Онлайн-курсы, менторство и образовательные платформы.',diff:'Легко',cap:'$0–500',profit:'Средняя',tags:['easy','lowbudget','fast']},
+];
+
+const professions=[
+  {t:'Frontend Developer',icon:'🖥️',salary:'$1500–4000',demand:'Очень высокий',skills:'HTML, CSS, JS, React',time:'6–9 мес'},
+  {t:'Backend Developer',icon:'🗄️',salary:'$1800–4500',demand:'Высокий',skills:'Node.js, SQL, API',time:'7–10 мес'},
+  {t:'Full Stack',icon:'🧩',salary:'$2000–5000',demand:'Высокий',skills:'Frontend + Backend',time:'10–14 мес'},
+  {t:'Python Developer',icon:'🐍',salary:'$1600–4200',demand:'Высокий',skills:'Python, Django, SQL',time:'6–9 мес'},
+  {t:'AI Engineer',icon:'🧠',salary:'$2500–6000',demand:'Очень высокий',skills:'PyTorch, LLM, MLOps',time:'10–14 мес'},
+  {t:'Machine Learning Engineer',icon:'📈',salary:'$2200–5500',demand:'Высокий',skills:'ML, статистика, Python',time:'9–12 мес'},
+  {t:'Data Scientist',icon:'📊',salary:'$2000–5000',demand:'Высокий',skills:'Python, SQL, статистика',time:'8–12 мес'},
+  {t:'DevOps',icon:'🔧',salary:'$2000–5000',demand:'Высокий',skills:'Docker, K8s, CI/CD',time:'7–10 мес'},
+  {t:'Cybersecurity',icon:'🛡️',salary:'$2000–5500',demand:'Очень высокий',skills:'Сети, пентест, SIEM',time:'8–12 мес'},
+  {t:'UX/UI Designer',icon:'🎨',salary:'$1200–3500',demand:'Средний',skills:'Figma, прототипы, UX-исследования',time:'5–8 мес'},
+  {t:'Mobile Developer',icon:'📱',salary:'$1700–4200',demand:'Высокий',skills:'Swift/Kotlin, Flutter',time:'7–10 мес'},
+  {t:'QA Engineer',icon:'🧪',salary:'$1200–3200',demand:'Средний',skills:'Тест-кейсы, автотесты',time:'4–6 мес'},
+];
+
+const roadmapSteps=[
+  {t:'Изучить основы',d:'Пройди фундаментальный курс по выбранному направлению.'},
+  {t:'Практика',d:'Закрепи знания на мини-задачах и упражнениях.'},
+  {t:'Создать портфолио',d:'Собери 2–3 показательных проекта.'},
+  {t:'Выполнить реальные проекты',d:'Возьми фриланс-заказ или пет-проект с реальным пользователем.'},
+  {t:'Пройти собеседование',d:'Подготовь резюме и потренируйся отвечать на типовые вопросы.'},
+  {t:'Получить первую работу',d:'Откликайся, договаривайся об офере и начинай карьеру.'},
+];
+
+const courses=[
+  {n:'Coursera',c:'from-cyan-400 to-blue-500'},
+  {n:'Udemy',c:'from-violet-400 to-fuchsia-500'},
+  {n:'freeCodeCamp',c:'from-emerald-400 to-teal-500'},
+  {n:'Codecademy',c:'from-indigo-400 to-violet-500'},
+  {n:'Stepik',c:'from-pink-400 to-rose-500'},
+  {n:'YouTube',c:'from-red-400 to-orange-500'},
+];
+
+const articles=[
+  {t:'Как заработать первые $1000 онлайн',tag:'Бизнес',read:'6 мин'},
+  {t:'Самые перспективные IT-профессии',tag:'Карьера',read:'8 мин'},
+  {t:'Лучшие бизнес-идеи 2026 года',tag:'Бизнес',read:'7 мин'},
+  {t:'Как создать SaaS с нуля',tag:'Продукт',read:'9 мин'},
+  {t:'Как стать AI-разработчиком',tag:'Карьера',read:'10 мин'},
+];
+
+const faqs=[
+  {q:'Это платформа бесплатная?',a:'Базовые материалы, roadmap и часть статей доступны бесплатно. Расширенные инструменты и персональные рекомендации входят в платный план.'},
+  {q:'Нужен ли опыт в IT, чтобы начать?',a:'Нет. Каждая профессия имеет свой уровень сложности и стартовый roadmap для новичков.'},
+  {q:'Как сохранить прогресс?',a:'Заведи личный кабинет — там сохраняются идеи, профессии и отмеченные этапы обучения.'},
+  {q:'Можно ли совмещать бизнес и обучение IT?',a:'Да, многие пользователи параллельно тестируют бизнес-идею и проходят roadmap по профессии.'},
+];
+
+/* ---------- RENDER: IDEAS ---------- */
+const ideasGrid=document.getElementById('ideas-grid');
+ideasGrid.innerHTML=ideas.map((idea,i)=>`
+  <div class="card glass rounded-2xl p-6 idea-card" data-tags="${idea.tags.join(' ')}" data-name="${idea.t.toLowerCase()}">
+    <div class="card-glow"></div>
+    <div class="flex items-start justify-between">
+      <div class="text-3xl">${idea.icon}</div>
+      <button class="save-btn text-lg opacity-60 hover:opacity-100" data-type="idea" data-name="${idea.t}">⭐</button>
+    </div>
+    <h3 class="font-semibold text-lg mt-3">${idea.t}</h3>
+    <p class="text-sm mt-2" style="color:var(--ink-dim)">${idea.desc}</p>
+    <div class="grid grid-cols-3 gap-2 mt-4 text-xs">
+      <div><div style="color:var(--ink-dim)">Сложность</div><div class="font-medium mt-0.5">${idea.diff}</div></div>
+      <div><div style="color:var(--ink-dim)">Капитал</div><div class="font-medium mt-0.5">${idea.cap}</div></div>
+      <div><div style="color:var(--ink-dim)">Прибыль</div><div class="font-medium mt-0.5">${idea.profit}</div></div>
+    </div>
+    <button class="btn-ghost w-full text-sm mt-5">Подробнее</button>
+  </div>
+`).join('');
+
+/* ---------- RENDER: PROFESSIONS ---------- */
+const profGrid=document.getElementById('professions-grid');
+profGrid.innerHTML=professions.map(p=>`
+  <div class="card glass rounded-2xl p-6" data-name="${p.t.toLowerCase()}">
+    <div class="card-glow"></div>
+    <div class="flex items-start justify-between">
+      <div class="text-3xl">${p.icon}</div>
+      <button class="save-btn text-lg opacity-60 hover:opacity-100" data-type="profession" data-name="${p.t}">⭐</button>
+    </div>
+    <h3 class="font-semibold text-lg mt-3">${p.t}</h3>
+    <div class="space-y-1.5 mt-3 text-xs" style="color:var(--ink-dim)">
+      <div>💰 Зарплата: <span style="color:var(--ink)">${p.salary}</span></div>
+      <div>📈 Спрос: <span style="color:var(--ink)">${p.demand}</span></div>
+      <div>🧠 Навыки: <span style="color:var(--ink)">${p.skills}</span></div>
+      <div>⏱ Обучение: <span style="color:var(--ink)">${p.time}</span></div>
+    </div>
+    <button class="btn-neon w-full text-sm mt-5">Начать обучение</button>
+  </div>
+`).join('');
+
+/* ---------- RENDER: ROADMAP ---------- */
+const roadmapEl=document.getElementById('roadmap-steps');
+roadmapEl.innerHTML=roadmapSteps.map((s,i)=>`
+  <div class="relative reveal roadmap-step" data-index="${i}">
+    <div class="absolute -left-10 top-1 w-6 h-6 rounded-full glass-strong flex items-center justify-center text-xs step-dot" style="border:1px solid var(--glass-border)">${i+1}</div>
+    <div class="glass rounded-xl p-5 flex items-center justify-between gap-4">
+      <div>
+        <h4 class="font-semibold">${s.t}</h4>
+        <p class="text-sm mt-1" style="color:var(--ink-dim)">${s.d}</p>
+      </div>
+      <input type="checkbox" class="step-check w-5 h-5 accent-violet-500 shrink-0" data-index="${i}">
+    </div>
+  </div>
+`).join('');
+
+/* ---------- RENDER: COURSES ---------- */
+document.getElementById('courses-grid').innerHTML=courses.map(c=>`
+  <div class="card glass rounded-xl p-5 text-center"><div class="card-glow"></div>
+    <div class="w-10 h-10 mx-auto rounded-lg bg-gradient-to-br ${c.c} mb-3"></div>
+    <p class="text-sm font-medium">${c.n}</p>
+  </div>
+`).join('');
+
+/* ---------- RENDER: ARTICLES ---------- */
+document.getElementById('articles-grid').innerHTML=articles.map(a=>`
+  <div class="card glass rounded-2xl overflow-hidden" data-name="${a.t.toLowerCase()}">
+    <div class="card-glow"></div>
+    <div class="h-32 bg-gradient-to-br from-violet-600/30 via-cyan-500/20 to-fuchsia-500/20"></div>
+    <div class="p-5">
+      <span class="badge">${a.tag} · ${a.read}</span>
+      <h4 class="font-semibold mt-3 leading-snug">${a.t}</h4>
+      <a href="#" class="text-sm mt-3 inline-block" style="color:var(--cyan)">Читать →</a>
+    </div>
+  </div>
+`).join('');
+
+/* ---------- RENDER: FAQ ---------- */
+document.getElementById('faq-list').innerHTML=faqs.map(f=>`
+  <details class="faq-item glass rounded-xl px-5 py-4">
+    <summary class="flex items-center justify-between font-medium">
+      ${f.q}
+      <span class="chev transition-transform" style="color:var(--cyan)">⌄</span>
+    </summary>
+    <p class="text-sm mt-3" style="color:var(--ink-dim)">${f.a}</p>
+  </details>
+`).join('');
+
+/* re-apply reveal animation to dynamically added cards */
+document.querySelectorAll('.card, .roadmap-step').forEach(el=>{
+  gsap.fromTo(el,{opacity:0,y:30},{opacity:1,y:0,duration:0.7,ease:'power2.out',
+    scrollTrigger:{trigger:el,start:'top 92%'}});
+});
+
+/* ---------- TILT EFFECT ---------- */
+document.querySelectorAll('.card').forEach(card=>{
+  card.addEventListener('mousemove',e=>{
+    const r=card.getBoundingClientRect();
+    const x=(e.clientX-r.left)/r.width-0.5;
+    const y=(e.clientY-r.top)/r.height-0.5;
+    card.style.transform=`rotateX(${-y*6}deg) rotateY(${x*6}deg) translateY(-4px)`;
+  });
+  card.addEventListener('mouseleave',()=>{ card.style.transform=''; });
+});
+
+/* ---------- SAVE TO CABINET ---------- */
+const savedIdeas=new Set(), savedProfessions=new Set();
+document.addEventListener('click',e=>{
+  const btn=e.target.closest('.save-btn');
+  if(!btn) return;
+  const type=btn.dataset.type, name=btn.dataset.name;
+  const set = type==='idea' ? savedIdeas : savedProfessions;
+  if(set.has(name)){ set.delete(name); btn.style.opacity=0.6; }
+  else{ set.add(name); btn.style.opacity=1; gsap.fromTo(btn,{scale:1.4},{scale:1,duration:0.3}); }
+  renderSaved();
+});
+function renderSaved(){
+  const ideasEl=document.getElementById('saved-ideas');
+  const profEl=document.getElementById('saved-professions');
+  ideasEl.innerHTML = savedIdeas.size ? [...savedIdeas].map(n=>`<div class="glass rounded-lg px-3 py-2">${n}</div>`).join('') : '<p style="color:var(--ink-dim)">Пока пусто — сохрани идею на карточке ⭐</p>';
+  profEl.innerHTML = savedProfessions.size ? [...savedProfessions].map(n=>`<div class="glass rounded-lg px-3 py-2">${n}</div>`).join('') : '<p style="color:var(--ink-dim)">Пока пусто — сохрани профессию ⭐</p>';
+}
+
+/* ---------- ROADMAP PROGRESS ---------- */
+document.addEventListener('change',e=>{
+  if(!e.target.classList.contains('step-check')) return;
+  const total=roadmapSteps.length;
+  const done=document.querySelectorAll('.step-check:checked').length;
+  document.getElementById('progress-bar').style.width=(done/total*100)+'%';
+  document.getElementById('progress-label').textContent=`${done} из ${total} этапов пройдено`;
+});
+
+/* ---------- SEARCH & FILTER ---------- */
+function runSearch(){
+  const q=document.getElementById('search-input').value.trim().toLowerCase();
+  let count=0;
+  document.querySelectorAll('#ideas-grid [data-name], #professions-grid [data-name], #articles-grid [data-name]').forEach(el=>{
+    const match = !q || el.dataset.name.includes(q);
+    el.style.display = match ? '' : 'none';
+    if(match) count++;
+  });
+  document.getElementById('search-result').textContent = q ? `Найдено совпадений: ${count}` : '';
+}
+document.getElementById('search-btn').addEventListener('click',runSearch);
+document.getElementById('search-input').addEventListener('keydown',e=>{ if(e.key==='Enter') runSearch(); });
+
+document.querySelectorAll('.filter-chip').forEach(chip=>{
+  chip.addEventListener('click',()=>{
+    document.querySelectorAll('.filter-chip').forEach(c=>c.style.borderColor='');
+    chip.style.borderColor='var(--cyan)';
+    const f=chip.dataset.filter;
+    document.querySelectorAll('.idea-card').forEach(card=>{
+      card.style.display = (f==='all' || card.dataset.tags.includes(f)) ? '' : 'none';
+    });
+  });
+});
+
+/* ---------- FORMS (demo only) ---------- */
+document.getElementById('contact-form').addEventListener('submit',e=>{
+  e.preventDefault();
+  document.getElementById('contact-status').textContent='Спасибо! Сообщение отправлено ✓';
+  e.target.reset();
+});
+document.getElementById('newsletter-form').addEventListener('submit',e=>{
+  e.preventDefault();
+  document.getElementById('newsletter-status').textContent='Готово! Проверь почту для подтверждения ✓';
+  e.target.reset();
+});
+</script>
+</body>
+</html>
